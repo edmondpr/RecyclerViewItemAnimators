@@ -36,32 +36,28 @@ import it.gmariotti.recyclerview.itemanimator.demo.R;
  */
 public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.SimpleViewHolder> {
 
-    public static final int LAST_POSITION = -1 ;
     private final Context mContext;
     private List<String> mData;
 
-    public void add(String s,int position) {
-        position = position == LAST_POSITION ? getItemCount()  : position;
-        mData.add(position,s);
+    public void add(String s, int position) {
+        mData.add(getItemCount(), s);
         notifyItemInserted(position);
     }
 
     public void remove(int position){
-        if (position == LAST_POSITION && getItemCount()>0)
-            position = getItemCount() -1 ;
-
-        if (position > LAST_POSITION && position < getItemCount()) {
-            mData.remove(position);
-            notifyItemRemoved(position);
-        }
+        mData.remove(position);
+        notifyItemRemoved(position);
+        notifyItemRangeChanged(position, getItemCount());
     }
 
     public static class SimpleViewHolder extends RecyclerView.ViewHolder {
         public final TextView title;
+        public final TextView actionRemove;
 
         public SimpleViewHolder(View view) {
             super(view);
             title = (TextView) view.findViewById(R.id.simple_text);
+            actionRemove = (TextView) view.findViewById(R.id.actionRemove);
         }
     }
 
@@ -80,10 +76,10 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.SimpleView
     @Override
     public void onBindViewHolder(SimpleViewHolder holder, final int position) {
         holder.title.setText(mData.get(position));
-        holder.title.setOnClickListener(new View.OnClickListener() {
+        holder.actionRemove.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(mContext, "Position =" + position, Toast.LENGTH_SHORT).show();
+                remove(position);
             }
         });
     }
@@ -92,4 +88,5 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.SimpleView
     public int getItemCount() {
         return mData.size();
     }
+
 }
