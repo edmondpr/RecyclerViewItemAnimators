@@ -9,6 +9,7 @@ import android.os.Build;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.SparseBooleanArray;
@@ -21,23 +22,24 @@ import android.view.animation.Animation;
 import android.view.animation.Transformation;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.TextView;
+
+import it.gmariotti.recyclerview.itemanimator.demo.adapter.SimpleAdapter;
 
 
-public class ExpandableTextView extends LinearLayout implements View.OnClickListener {
+public class ExpandableRecyclerView extends LinearLayout implements View.OnClickListener {
 
-    private static final String TAG = ExpandableTextView.class.getSimpleName();
+    private static final String TAG = ExpandableRecyclerView.class.getSimpleName();
 
     /* The default number of lines */
-    private static final int MAX_COLLAPSED_LINES = 8;
+    private static final int MAX_COLLAPSED_LINES = 2;
 
     /* The default animation duration */
-    private static final int DEFAULT_ANIM_DURATION = 300;
+    private static final int DEFAULT_ANIM_DURATION = 200;
 
     /* The default alpha value when the animation starts */
     private static final float DEFAULT_ANIM_ALPHA_START = 0.7f;
 
-    protected TextView mTv;
+    protected RecyclerView mTv;
 
     protected ImageButton mButton; // Button to expand/collapse
 
@@ -47,7 +49,7 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
 
     private int mCollapsedHeight;
 
-    private int mTextHeightWithMaxLines;
+    private int mListHeightWithMaxLines;
 
     private int mMaxCollapsedLines;
 
@@ -70,17 +72,17 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
     private SparseBooleanArray mCollapsedStatus;
     private int mPosition;
 
-    public ExpandableTextView(Context context) {
+    public ExpandableRecyclerView(Context context) {
         this(context, null);
     }
 
-    public ExpandableTextView(Context context, AttributeSet attrs) {
+    public ExpandableRecyclerView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(attrs);
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public ExpandableTextView(Context context, AttributeSet attrs, int defStyle) {
+    public ExpandableRecyclerView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init(attrs);
     }
@@ -88,7 +90,7 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
     @Override
     public void setOrientation(int orientation){
         if(LinearLayout.HORIZONTAL == orientation){
-            throw new IllegalArgumentException("ExpandableTextView only supports Vertical Orientation.");
+            throw new IllegalArgumentException("ExpandableRecyclerView only supports Vertical Orientation.");
         }
         super.setOrientation(orientation);
     }
@@ -111,10 +113,9 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
 
         Animation animation;
         if (mCollapsed) {
-            animation = new ExpandCollapseAnimation(this, getHeight(), mCollapsedHeight);
+            animation = new ExpandCollapseAnimation(mTv, 1000, 330);
         } else {
-            animation = new ExpandCollapseAnimation(this, getHeight(), getHeight() +
-                    mTextHeightWithMaxLines - mTv.getHeight());
+            animation = new ExpandCollapseAnimation(mTv, 330, 1000);
         }
 
         animation.setFillAfter(true);
@@ -167,23 +168,25 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
         // Setup with optimistic case
         // i.e. Everything fits. No button needed
         mButton.setVisibility(View.GONE);
-        mTv.setMaxLines(Integer.MAX_VALUE);
+        //mTv.setMaxLines(Integer.MAX_VALUE);
 
         // Measure
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
         // If the text fits in collapsed mode, we are done.
-        if (mTv.getLineCount() <= mMaxCollapsedLines) {
+        if (mTv.getAdapter().getItemCount() <= mMaxCollapsedLines) {
             return;
         }
 
         // Saves the text height w/ max lines
-        mTextHeightWithMaxLines = getRealTextViewHeight(mTv);
+        mListHeightWithMaxLines = getRealRecyclerViewHeight(mTv);
 
-        // Doesn't fit in collapsed mode. Collapse text view as needed. Show
+        // Doesn't fit in collapsed mode. Collapse recycler view as needed. Show
         // button.
         if (mCollapsed) {
-            mTv.setMaxLines(mMaxCollapsedLines);
+            ViewGroup.LayoutParams params = mTv.getLayoutParams();
+            params.height = 330;
+            mTv.setLayoutParams(params);
         }
         mButton.setVisibility(View.VISIBLE);
 
@@ -191,7 +194,7 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
         if (mCollapsed) {
-            // Gets the margin between the TextView's bottom and the ViewGroup's bottom
+            // Gets the margin between the RecyclerView's bottom and the ViewGroup's bottom
             mTv.post(new Runnable() {
                 @Override
                 public void run() {
@@ -209,7 +212,7 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
 
     public void setText(@Nullable CharSequence text) {
         mRelayout = true;
-        mTv.setText(text);
+        //mTv.setText(text);
         setVisibility(TextUtils.isEmpty(text) ? View.GONE : View.VISIBLE);
     }
 
@@ -223,14 +226,6 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
         setText(text);
         getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
         requestLayout();
-    }
-
-    @Nullable
-    public CharSequence getText() {
-        if (mTv == null) {
-            return "";
-        }
-        return mTv.getText();
     }
 
     private void init(AttributeSet attrs) {
@@ -258,8 +253,7 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
     }
 
     private void findViews() {
-        mTv = (TextView) findViewById(R.id.expandable_text);
-        mTv.setGravity(Gravity.CENTER_HORIZONTAL);
+        mTv = (RecyclerView) findViewById(R.id.expandableList);
         mTv.setOnClickListener(this);
         mButton = (ImageButton) findViewById(R.id.expand_collapse);
         mButton.setImageDrawable(mCollapsed ? mExpandDrawable : mCollapseDrawable);
@@ -297,10 +291,8 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
         }
     }
 
-    private static int getRealTextViewHeight(@NonNull TextView textView) {
-        int textHeight = textView.getLayout().getLineTop(textView.getLineCount());
-        int padding = textView.getCompoundPaddingTop() + textView.getCompoundPaddingBottom();
-        return textHeight + padding;
+    private static int getRealRecyclerViewHeight(@NonNull RecyclerView recyclerView) {
+        return recyclerView.getAdapter().getItemCount();
     }
 
     class ExpandCollapseAnimation extends Animation {
@@ -318,12 +310,13 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
         @Override
         protected void applyTransformation(float interpolatedTime, Transformation t) {
             final int newHeight = (int)((mEndHeight - mStartHeight) * interpolatedTime + mStartHeight);
-            mTv.setMaxHeight(newHeight - mMarginBetweenTxtAndBottom);
+
             if (Float.compare(mAnimAlphaStart, 1.0f) != 0) {
-                applyAlphaAnimation(mTv, mAnimAlphaStart + interpolatedTime * (1.0f - mAnimAlphaStart));
+                applyAlphaAnimation(mTargetView, mAnimAlphaStart + interpolatedTime * (1.0f - mAnimAlphaStart));
             }
-            mTargetView.getLayoutParams().height = newHeight;
-            mTargetView.requestLayout();
+            ViewGroup.LayoutParams params = mTargetView.getLayoutParams();
+            params.height = newHeight;
+            mTargetView.setLayoutParams(params);
         }
 
         @Override
@@ -341,9 +334,9 @@ public class ExpandableTextView extends LinearLayout implements View.OnClickList
         /**
          * Called when the expand/collapse animation has been finished
          *
-         * @param textView - TextView being expanded/collapsed
-         * @param isExpanded - true if the TextView has been expanded
+         * @param recyclerView - RecyclerView being expanded/collapsed
+         * @param isExpanded - true if the RecyclerView has been expanded
          */
-        void onExpandStateChanged(TextView textView, boolean isExpanded);
+        void onExpandStateChanged(RecyclerView recyclerView, boolean isExpanded);
     }
 }

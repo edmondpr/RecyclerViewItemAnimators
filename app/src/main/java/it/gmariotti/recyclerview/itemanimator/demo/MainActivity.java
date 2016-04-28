@@ -26,16 +26,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        //Setup RecyclerView
-        mRecyclerView = (RecyclerView) findViewById(R.id.list);
         actionAdd = (TextView) findViewById(R.id.actionAdd);
         actionAdd.setOnClickListener(this);
 
+        //Setup RecyclerView
+        mRecyclerView = (RecyclerView) findViewById(R.id.expandableList);
+        CustomLinearLayoutManager customLayoutManager = new CustomLinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        mRecyclerView.setLayoutManager(customLayoutManager);
+
         //mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
         mAdapter = new SimpleAdapter(this, sCheeseStrings);
         mRecyclerView.setAdapter(mAdapter);
+
+        ExpandableRecyclerView certificationsExpandableRecyclerView = (ExpandableRecyclerView) findViewById(R.id.certificationsExpandableRecyclerView);
+        certificationsExpandableRecyclerView.setText("test");
     }
 
     @Override
@@ -58,6 +63,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public static final String[] sCheeseStrings = {
-            "Abbaye de Belloc" , "Abbaye du Mont des Cats" , "item3" , "item4" , "item5" };
+            "Abbaye de Belloc" , "Abbaye du Mont des Cats" , "item3" , "item4" , "item5" , "item6"};
 
 }
