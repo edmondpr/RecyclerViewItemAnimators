@@ -3,19 +3,19 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="match_parent"
-              android:layout_height="56dp">
+              android:layout_height="wrap_content">
 
     <RelativeLayout
+        android:id="@+id/containerRelativeLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <TextView
+            android:id="@+id/simple_text"
             android:layout_marginLeft="16dp"
             android:padding="16dp"
             android:textSize="16sp"
-            android:id="@+id/simple_text"
-            android:layout_width="match_parent"
-            android:text="simple placeholder...."
+            android:layout_width="250dp"
             android:layout_height="wrap_content"/>
 
         <LinearLayout

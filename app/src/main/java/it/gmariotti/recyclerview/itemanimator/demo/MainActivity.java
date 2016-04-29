@@ -7,13 +7,17 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
+
+import java.util.ArrayList;
 
 import it.gmariotti.recyclerview.itemanimator.demo.adapter.DividerItemDecoration;
 import it.gmariotti.recyclerview.itemanimator.demo.adapter.SimpleAdapter;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    ExpandableRecyclerView certificationsExpandableRecyclerView;
     RecyclerView mRecyclerView;
     SimpleAdapter mAdapter;
     TextView actionAdd;
@@ -39,9 +43,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mAdapter = new SimpleAdapter(this, sCheeseStrings);
         mRecyclerView.setAdapter(mAdapter);
 
-        ExpandableRecyclerView certificationsExpandableRecyclerView = (ExpandableRecyclerView) findViewById(R.id.certificationsExpandableRecyclerView);
-        certificationsExpandableRecyclerView.mContext = this;
+        certificationsExpandableRecyclerView = (ExpandableRecyclerView) findViewById(R.id.certificationsExpandableRecyclerView);
         certificationsExpandableRecyclerView.setText("test");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     @Override
@@ -64,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public static final String[] sCheeseStrings = {
-            "Abbaye de Belloc" , "Abbaye du Mont des Cats" , "item3" , "item4" , "item5" , "item6"};
+            "Abbaye de Belloc Abbaye de Belloc Abbaye de Belloc Abbaye de Belloc" , "Abbaye du Mont des Cats Abbaye du Mont des Cats" , "item3 item3 item3 item3 item3 item3 item3 item3 item3 item3 item3 item3 item3 item3 item3 item3 item3 item3 " , "item4 item4 item4 item4 item4 item4 item4 item4 item4 item4 item4 item4 item4 item4 item4 " , "item5" , "item6 item6 item6 item6 item6 item6 item6 item6 item6 item6 item6 item6 item6 item6 item6 "};
+
 
 }

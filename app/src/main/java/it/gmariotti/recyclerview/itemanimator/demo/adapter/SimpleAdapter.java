@@ -17,19 +17,25 @@
  */
 package it.gmariotti.recyclerview.itemanimator.demo.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Build;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import it.gmariotti.recyclerview.itemanimator.demo.R;
+import it.gmariotti.recyclerview.itemanimator.demo.models.UpdateListEvent;
 
 /**
  * @author Gabriele Mariotti (gabri.mariotti@gmail.com)
@@ -51,11 +57,13 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.SimpleView
     }
 
     public static class SimpleViewHolder extends RecyclerView.ViewHolder {
+        public final RelativeLayout containerRelativeLayout;
         public final TextView title;
         public final TextView actionRemove;
 
         public SimpleViewHolder(View view) {
             super(view);
+            containerRelativeLayout = (RelativeLayout) view.findViewById(R.id.containerRelativeLayout);
             title = (TextView) view.findViewById(R.id.simple_text);
             actionRemove = (TextView) view.findViewById(R.id.actionRemove);
         }
@@ -80,7 +88,28 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.SimpleView
             @Override
             public void onClick(View view) {
                 remove(position);
+                EventBus.getDefault().post(new UpdateListEvent(null, position));
             }
+        });
+
+        final RelativeLayout containerRelativeLayout = holder.containerRelativeLayout;
+        ViewTreeObserver viewTreeObserver = containerRelativeLayout.getViewTreeObserver();
+        viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+
+            @SuppressLint("NewApi")
+            @SuppressWarnings("deprecation")
+            @Override
+            public void onGlobalLayout() {
+                float itemHeight = containerRelativeLayout.getMeasuredHeight();
+                EventBus.getDefault().post(new UpdateListEvent(itemHeight, null));
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    containerRelativeLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                } else {
+                    containerRelativeLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                }
+            }
+
         });
     }
 
@@ -88,5 +117,6 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.SimpleView
     public int getItemCount() {
         return mData.size();
     }
+
 
 }
