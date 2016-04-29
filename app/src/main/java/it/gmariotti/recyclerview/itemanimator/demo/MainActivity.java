@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mRecyclerView.setAdapter(mAdapter);
 
         ExpandableRecyclerView certificationsExpandableRecyclerView = (ExpandableRecyclerView) findViewById(R.id.certificationsExpandableRecyclerView);
+        certificationsExpandableRecyclerView.mContext = this;
         certificationsExpandableRecyclerView.setText("test");
     }
 
