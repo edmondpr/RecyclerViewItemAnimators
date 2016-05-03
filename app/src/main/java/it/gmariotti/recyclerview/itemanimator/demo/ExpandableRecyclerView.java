@@ -6,6 +6,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Handler;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -26,6 +27,9 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import it.gmariotti.recyclerview.itemanimator.demo.models.UpdateListEvent;
 
@@ -70,13 +74,6 @@ public class ExpandableRecyclerView extends LinearLayout implements View.OnClick
     ArrayList<Float> recyclerViewItemHeights = new ArrayList<Float>();
 
 
-    /* Listener for callback */
-    private OnExpandStateChangeListener mListener;
-
-    /* For saving collapsed status when used in ListView */
-    private SparseBooleanArray mCollapsedStatus;
-    private int mPosition;
-
     public ExpandableRecyclerView(Context context) {
         this(context, null);
     }
@@ -109,10 +106,6 @@ public class ExpandableRecyclerView extends LinearLayout implements View.OnClick
         mCollapsed = !mCollapsed;
         mButton.setImageDrawable(mCollapsed ? mExpandDrawable : mCollapseDrawable);
 
-        if (mCollapsedStatus != null) {
-            mCollapsedStatus.put(mPosition, mCollapsed);
-        }
-
         Animation animation;
         if (mCollapsed) {
             animation = new ExpandCollapseAnimation(Math.round(recyclerViewHeight), Math.round(recyclerViewCollapsedHeight));
@@ -140,10 +133,6 @@ public class ExpandableRecyclerView extends LinearLayout implements View.OnClick
                 // clear the animation flag
                 mAnimating = false;
 
-                // notify the listener
-                if (mListener != null) {
-                    mListener.onExpandStateChanged(mRecyclerView, !mCollapsed);
-                }
             }
             @Override
             public void onAnimationRepeat(Animation animation) { }
@@ -302,22 +291,23 @@ public class ExpandableRecyclerView extends LinearLayout implements View.OnClick
         }
     }
 
-    public interface OnExpandStateChangeListener {
-        /**
-         * Called when the expand/collapse animation has been finished
-         *
-         * @param recyclerView - RecyclerView being expanded/collapsed
-         * @param isExpanded - true if the RecyclerView has been expanded
-         */
-        void onExpandStateChanged(RecyclerView recyclerView, boolean isExpanded);
-    }
-
     @Subscribe
     public void onUpdateListEvent(UpdateListEvent updateListEvent) {
         if (updateListEvent.itemHeight != null) {
             if (recyclerViewItemHeights.size() < mRecyclerView.getAdapter().getItemCount()) {
-                recyclerViewItemHeights.add(updateListEvent.itemHeight);
-                updateRecyclerViewHeight();
+                if (!updateListEvent.isNew) {
+                    recyclerViewItemHeights.add(updateListEvent.itemHeight);
+                    updateRecyclerViewHeight();
+                } else {
+                    if (mCollapsed) {
+                        mButton.performClick();
+                    }
+                    // If it's a new element, increase the height of recycler view by 50 so that
+                    // it can accommodate the element
+                    ViewGroup.LayoutParams params = mRecyclerView.getLayoutParams();
+                    params.height = Math.round(recyclerViewHeight) + 50;
+                    mRecyclerView.setLayoutParams(params);
+                }
             }
         } else if (updateListEvent.position != null) {
             recyclerViewItemHeights.remove(updateListEvent.position.intValue());
@@ -328,12 +318,22 @@ public class ExpandableRecyclerView extends LinearLayout implements View.OnClick
             collapse();
             firstLoad = false;
         }
+        // Hide chevron if less than max collapsed lines
+        if (recyclerViewItemHeights.size() <= mMaxCollapsedLines) {
+            mButton.setVisibility(View.GONE);
+        } else {
+            mButton.setVisibility(View.VISIBLE);
+        }
     }
 
     private void updateRecyclerViewHeight() {
         float oldRecyclerViewCollapsedHeight = recyclerViewCollapsedHeight;
         recyclerViewCollapsedHeight = 0;
-        for (int i = 0; i < mMaxCollapsedLines; i++) {
+        int count = mMaxCollapsedLines;
+        if (recyclerViewItemHeights.size() < mMaxCollapsedLines) {
+            count = recyclerViewItemHeights.size();
+        }
+        for (int i = 0; i < count; i++) {
             recyclerViewCollapsedHeight += recyclerViewItemHeights.get(i);
         }
         float oldRecyclerViewHeight = recyclerViewHeight;
@@ -341,6 +341,7 @@ public class ExpandableRecyclerView extends LinearLayout implements View.OnClick
         for (int i = 0; i < recyclerViewItemHeights.size(); i++) {
             recyclerViewHeight += recyclerViewItemHeights.get(i);
         }
+        // Animate only if not on first load
         if (!firstLoad) {
             if (!mCollapsed) {
                 Animation animation = new ExpandCollapseAnimation(Math.round(oldRecyclerViewHeight), Math.round(recyclerViewHeight));

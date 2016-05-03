@@ -48,6 +48,7 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.SimpleView
     public void add(String s, int position) {
         mData.add(getItemCount(), s);
         notifyItemInserted(position);
+        EventBus.getDefault().post(new UpdateListEvent(10f, null, true));
     }
 
     public void remove(int position){
@@ -88,7 +89,7 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.SimpleView
             @Override
             public void onClick(View view) {
                 remove(position);
-                EventBus.getDefault().post(new UpdateListEvent(null, position));
+                EventBus.getDefault().post(new UpdateListEvent(null, position, false));
             }
         });
 
@@ -101,7 +102,7 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.SimpleView
             @Override
             public void onGlobalLayout() {
                 float itemHeight = containerRelativeLayout.getMeasuredHeight();
-                EventBus.getDefault().post(new UpdateListEvent(itemHeight, null));
+                EventBus.getDefault().post(new UpdateListEvent(itemHeight, null, false));
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                     containerRelativeLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
